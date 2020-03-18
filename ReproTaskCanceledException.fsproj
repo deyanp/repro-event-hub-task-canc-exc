@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UseNETCoreGenerator>true</UseNETCoreGenerator>
+    <AzureFunctionsVersion>v3</AzureFunctionsVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.3" />
+    <PackageReference Include="TaskBuilder.fs" Version="2.1.0" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Logging.ApplicationInsights" Version="3.0.14" />
+    <PackageReference Include="Microsoft.Azure.EventHubs" Version="4.1.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="HttpTrigger.fs" />
+    <None Include="host.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="local.settings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
+    <Content Include="README.txt" />
+    <Content Include="Azure\templates\Storage\StorageAccount.json" />
+    <Content Include="Azure\templates\FuncApp\PlanWithFuncApps.json" />
+    <Content Include="Azure\templates\FuncApp\PlanWithFuncApps-parameters.json" />
+    <Content Include="Azure\templates\AppIns\AppIns.json" />
+    <Content Include="Azure\templates\AppIns\WebTests.json" />
+    <Content Include="Azure\templates\AppIns\WebTests-parameters.json" />
+    <Content Include="Azure\templates\EventHubs\EventHubs-parameters.json" />
+    <Content Include="Azure\templates\EventHubs\EventHubs.json" />
+    <Content Include="Azure\setup_env_with_rg_stacc_kv_evh_appins_plan_funcapps.sh" />
+    <!--
+    <None Include="proxies.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    -->    
+  </ItemGroup>
+</Project>

@@ -1,0 +1,41 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "names": {
+            "value": [
+                "{FUNCTION_APP_NAME}"
+            ]
+        },
+        "sku": {
+            "value": "Dynamic"
+        },
+        "skuCode": {
+            "value": "Y1"
+        },
+        "reserved": {
+            "value": false
+        },
+        "planKind": {
+            "value": ""
+        },
+        "hostingPlanName": {
+            "value": "ConsWindows"
+        },
+        "storageAccountName": {
+            "value": ""
+        },
+        "linuxFxVersion": {
+            "value": ""
+        },        
+        "siteAndSlotKind": {
+            "value": "functionapp"
+        },
+        "computeMode": {
+            "value": "Dynamic"
+        },
+        "alwaysOn": {
+            "value": false
+        }
+    }
+}

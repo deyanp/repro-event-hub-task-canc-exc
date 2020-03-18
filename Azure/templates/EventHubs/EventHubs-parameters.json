@@ -1,0 +1,28 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "namespace": {
+            "value": "{EVENT_HUBS_NS_NAME}"
+        },
+        "eventHubNames": {
+            "value": [
+                "{EVENT_HUB_NAME}"
+            ]
+        },
+        "partitionCounts" : {
+            "value": [
+                2
+            ]
+        },
+        "consumerGroupNames": {
+            "value": [
+                "$Default",
+                "eventhubviewer"
+            ]    
+        },        
+        "messageRetentionInDays": {
+            "value": 1
+        }
+    }
+}

@@ -1,0 +1,282 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "subscriptionId": {
+            "type": "string",
+            "defaultValue": "[subscription().subscriptionId]"
+        },
+        "names": {
+            "type": "array"
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "West Europe"
+        },
+        "hostingEnvironment": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "hostingPlanName": {
+            "type": "string"
+        },
+        "resGroupFuncApp": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().name]"
+        },
+        "resGroupKeyVault": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().name]"
+        },
+        "storageAccountName": {
+            "type": "string"
+        },
+        "linuxFxVersion": {
+            "type": "string",
+            "metadata": {
+                "description": "Must be empty string for Windows, and 'DOCKER|mcr.microsoft.com/azure-functions/dotnet:2.0-appservice' for Linux"
+            }
+        },
+        "appInsInstrKey": {
+            "type": "string"
+        },
+        "eventHubConnStr": {
+            "type": "string"
+        },
+        "azureAppConfigConnStr": {
+            "type": "string"
+        },  
+        "swapWarmUpPingPath": {
+            "type": "string",
+            "defaultValue": "/api/v1/health-check"
+        },
+        "keyVaultName": {
+            "type": "string",
+            "metadata": {
+                "description": "Specifies the name of the key vault."
+            }
+        },
+        "tenantId": {
+            "type": "string",
+            "defaultValue": "[subscription().tenantId]",
+            "metadata": {
+                "description": "Specifies the Azure Active Directory tenant ID that should be used for authenticating requests to the key vault. Get it by using Get-AzSubscription cmdlet."
+            }
+        },
+        "secretsPermissions": {
+            "type": "array",
+            "defaultValue": [
+                "get"
+            ],
+            "metadata": {
+                "description": "Specifies the permissions to secrets in the vault. Valid values are: all, get, list, set, delete, backup, restore, recover, and purge."
+            }
+        },
+        "siteAndSlotKind": {
+            "type": "string"
+        },
+        "sku": {
+            "type": "string"
+        },
+        "skuCode": {
+            "type": "string"
+        },        
+        "workerSize": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "workerSizeId": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "numberOfWorkers": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "maximumElasticWorkerCount": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "reserved":{
+            "type": "bool",
+            "metadata": {
+                "description": "True means Linux, false means Windows ..."
+            }
+        },
+        "computeMode":{
+            "type": "string",
+            "defaultValue": ""
+        },
+        "planKind":{
+            "type": "string"
+        },
+        "alwaysOn":{
+            "type": "bool",
+            "metadata": {
+                "description": "True only for App Service Plan, for rest false"
+            }
+        }
+    },
+    "variables": {
+    },
+    "resources": [
+        {
+            "apiVersion": "2019-08-01",
+            "name": "[parameters('hostingPlanName')]",
+            "type": "Microsoft.Web/serverfarms",
+            "location": "[parameters('location')]",
+            "kind": "[if(not(equals(parameters('planKind'), '')), parameters('planKind'), '')]",
+            "tags": null,
+            "dependsOn": [],
+            "properties": {
+                "name": "[parameters('hostingPlanName')]",
+                "workerSize": "[if(not(equals(parameters('workerSize'), '')), parameters('workerSize'), json('null'))]",
+                "workerSizeId": "[if(not(equals(parameters('workerSizeId'), '')), parameters('workerSizeId'), json('null'))]",
+                "numberOfWorkers": "[if(not(equals(parameters('numberOfWorkers'), '')), parameters('numberOfWorkers'), json('null'))]",
+                "reserved": "[parameters('reserved')]",
+                "hostingEnvironment": "[parameters('hostingEnvironment')]",
+                "maximumElasticWorkerCount": "[if(not(equals(parameters('maximumElasticWorkerCount'), '')), parameters('maximumElasticWorkerCount'), json('null'))]"
+            },
+            "sku": {
+                "Tier": "[parameters('sku')]",
+                "Name": "[parameters('skuCode')]"
+            }
+        },            
+        {
+            "apiVersion": "2019-08-01",
+            "name": "[parameters('names')[copyIndex()]]",
+            "type": "Microsoft.Web/sites",
+            "kind": "[parameters('siteAndSlotKind')]",
+            "location": "[parameters('location')]",
+            "identity": {
+                "type": "SystemAssigned"
+            },          
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]"
+            ],
+            "tags": {},
+            "properties": {
+                "name": "[parameters('names')[copyIndex()]]",
+                "siteConfig": {
+                    "appSettings": [
+                        {
+                            "name": "FUNCTIONS_WORKER_RUNTIME",
+                            "value": "dotnet"
+                        },
+                        {
+                            "name": "FUNCTIONS_EXTENSION_VERSION",
+                            "value": "~3"
+                        },
+                        {
+                            "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                            "value": "[parameters('appInsInstrKey')]"
+                        },
+                        {
+                            "name": "AzureWebJobsStorage",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountName'),';AccountKey=',listKeys(resourceId(parameters('subscriptionId'),parameters('resGroupFuncApp'),'Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
+                        },
+                        {
+                            "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountName'),';AccountKey=',listKeys(resourceId(parameters('subscriptionId'),parameters('resGroupFuncApp'),'Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2015-05-01-preview').key1)]"
+                        },
+                        {
+                            "name": "WEBSITE_CONTENTSHARE",
+                            "value": "[toLower(parameters('names')[copyIndex()])]"
+                        },
+                        {
+                            "name": "WEBSITE_NODE_DEFAULT_VERSION",
+                            "value": "10.14.1"
+                        },
+                        {
+                            "name": "WEBSITE_ADD_SITENAME_BINDINGS_IN_APPHOST_CONFIG",
+                            "value": "1"
+                        },
+                        {
+                            "name": "EventHubsConnectionString",
+                            "value": "[parameters('eventHubConnStr')]"
+                        },
+                        {
+                            "name": "WEBSITE_SWAP_WARMUP_PING_PATH",
+                            "value": "[parameters('swapWarmUpPingPath')]"
+                        }
+                    ],
+                    "linuxFxVersion": "[if(not(equals(parameters('linuxFxVersion'), '')), parameters('linuxFxVersion'), json('null'))]",
+                    "alwaysOn": "[parameters('alwaysOn')]"
+                },
+                "serverFarmId": "[concat('/subscriptions/', parameters('subscriptionId'),'/resourcegroups/', parameters('resGroupFuncApp'), '/providers/Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]",
+                "hostingEnvironment": "[parameters('hostingEnvironment')]",
+                "clientAffinityEnabled": false
+            },
+            "copy": {
+                "name": "func-app-copy",
+                "count": "[length(parameters('names'))]"
+            }
+        },
+        {
+            "apiVersion": "2019-08-01",
+            "type": "Microsoft.Web/sites/slots",
+            "name": "[concat(parameters('names')[copyIndex()], '/staging')]",
+            "kind": "[parameters('siteAndSlotKind')]",
+            "location": "[parameters('location')]",
+            "comments": "This specifies the web app slots.",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('hostingPlanName'))]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites', parameters('names')[copyIndex()])]"
+            ],
+            "copy": {
+                "name": "func-app-copy",
+                "count": "[length(parameters('names'))]"
+            }
+        },
+        {
+            "apiVersion": "2017-05-10",
+            "name": "[concat(parameters('names')[copyIndex()],'_nestedTemplate')]",
+            "type": "Microsoft.Resources/deployments",
+            "resourceGroup": "[parameters('resGroupKeyVault')]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "Microsoft.KeyVault/vaults/accessPolicies",
+                            "name": "[concat(parameters('keyVaultName'), '/add')]",
+                            "apiVersion": "2018-02-14",
+                            "properties": {
+                                "accessPolicies": [
+                                    {
+                                        "tenantId": "[parameters('tenantId')]",
+                                        "objectId": "[reference(resourceId(parameters('subscriptionId'),parameters('resGroupFuncApp'),'Microsoft.Web/sites', parameters('names')[copyIndex()]), '2019-08-01', 'Full').identity.principalId]",
+                                        "permissions": {
+                                            "secrets": "[parameters('secretsPermissions')]"
+                                        }                                         
+                                    },
+                                    {
+                                        "tenantId": "[parameters('tenantId')]",
+                                        "objectId": "[reference(resourceId(parameters('subscriptionId'),parameters('resGroupFuncApp'),'Microsoft.Web/sites/slots', parameters('names')[copyIndex()], 'staging'), '2019-08-01', 'Full').identity.principalId]",
+                                        "permissions": {
+                                            "secrets": "[parameters('secretsPermissions')]"
+                                        }                                      
+                                    }
+                                ]
+                            }    
+                        }
+                    ]
+                },
+                "parameters": {}
+            },
+            "copy": {
+                "name": "func-app-copy",
+                "count": "[length(parameters('names'))]"
+            }            
+        }
+    ]
+}            
